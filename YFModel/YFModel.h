@@ -16,4 +16,7 @@ FOUNDATION_EXPORT const unsigned char YFModelVersionString[];
 - (id)initWithDict:(NSDictionary *)dict;
 + (id)modelWithDict:(NSDictionary *)dict;
 
+- (id)objectForKeyedSubscript:(NSString *)key;
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
+
 @end

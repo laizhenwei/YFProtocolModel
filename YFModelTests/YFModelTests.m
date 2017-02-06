@@ -48,8 +48,9 @@
                            };
     
     YFModel<IPResponse> *ipRes = [YFModel modelWithDict:dict];
-    NSLog(@"code : %@, area : %@", ipRes.code, ipRes.result.area);
-    
+    ipRes.result[@"area"] = @"001";
+    ipRes.code = @003;
+    NSLog(@"code : %@, area : %@", ipRes.code, ipRes.result);
 }
 
 @end

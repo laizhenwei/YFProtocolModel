@@ -36,7 +36,11 @@
 }
 
 - (id)objectForKeyedSubscript:(NSString *)key {
-    return self.dict[key];
+    return [self.dict objectForKey:key];
+}
+
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
+    [self.dict setObject:obj forKey:key];
 }
 
 #pragma mark - Method Resolve
