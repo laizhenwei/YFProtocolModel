@@ -13,8 +13,12 @@ FOUNDATION_EXPORT const unsigned char YFModelVersionString[];
 
 @interface YFModel : NSObject
 
-- (id)initWithDict:(NSDictionary *)dict;
-+ (id)modelWithDict:(NSDictionary *)dict;
+- (id)initWithJSON:(id)json;
++ (id)modelWithJSON:(id)json;
+
+- (id)JSONObject;
+//- (id)JSONStrng;
+//- (id)JSONData;
 
 - (id)objectForKeyedSubscript:(NSString *)key;
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;

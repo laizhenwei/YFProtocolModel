@@ -10,15 +10,15 @@
 #import "YFModel.h"
 #import <objc/runtime.h>
 
-@protocol IPResult <NSObject>
-@property (nonatomic, copy) NSString *area;
-@property (nonatomic, copy) NSString *location;
+@protocol Human <NSObject>
+@property (nonatomic, copy) NSString *name;
+@property (nonatomic, copy) NSString *sex;
+@property (nonatomic, assign) NSNumber *age;
 @end
 
-@protocol IPResponse <NSObject>
-@property (nonatomic, copy) NSNumber *code;
-@property (nonatomic, copy) NSString *reason;
-@property (nonatomic, strong) YFModel<IPResult> *result;
+@protocol Message <NSObject>
+@property (nonatomic, copy) NSString *text;
+@property (nonatomic, strong) YFModel<Human> *user;
 @end
 
 @interface YFModelTests : XCTestCase
@@ -37,20 +37,34 @@
     [super tearDown];
 }
 
-- (void)testDict {
+- (void)testProtocol {
     NSDictionary *dict = @{
-                           @"code":@200,
-                           @"reason":@"Return Successd!",
-                           @"result": @{
-                                        @"area":@"江苏省苏州市",
-                                        @"location":@"电信"
-                                        }
+                           @"name" : @"laizw",
+                           @"sex"  : @"man"
                            };
-    
-    YFModel<IPResponse> *ipRes = [YFModel modelWithDict:dict];
-    ipRes.result[@"area"] = @"001";
-    ipRes.code = @003;
-    NSLog(@"code : %@, area : %@", ipRes.code, ipRes.result);
+    YFModel<Human> *human = [YFModel modelWithJSON:dict];
+    NSLog(@"name : %@, sex : %@", human.name, human[@"sex"]);
 }
+
+- (void)testModels {
+    NSDictionary *dict = @{
+                           @"text" : @"hello",
+                           @"user" : @{
+                                       @"name" : @"laizw",
+                                       @"sex"  : @"man"
+                                       }
+                           };
+    YFModel<Message> *msg = [YFModel modelWithJSON:dict];
+    NSLog(@"%@ say: %@", msg.user.name, msg.text);
+}
+
+- (void)testJSONString {
+    NSString *jsonString = @"{\"name\":\"laizw\", \"sex\":\"man\", \"age\":20}";
+    
+    YFModel<Human> *human = [YFModel modelWithJSON:jsonString];
+    NSLog(@"name : %@, sex : %@, age : %@", human.name, human.sex, human[@"age"]);
+}
+
+
 
 @end
