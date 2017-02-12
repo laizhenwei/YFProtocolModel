@@ -396,6 +396,7 @@
 				C6B6784F1E48367F00D17F09 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		C6B678501E48367F00D17F09 /* Build configuration list for PBXNativeTarget "YFModelTests" */ = {
 			isa = XCConfigurationList;
@@ -404,6 +405,7 @@
 				C6B678521E48367F00D17F09 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

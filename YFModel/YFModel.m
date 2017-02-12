@@ -15,19 +15,6 @@
 
 @implementation YFModel
 
-#pragma mark - Method Resolve
-+ (BOOL)resolveInstanceMethod:(SEL)sel {
-    NSString *selStr = NSStringFromSelector(sel);
-    if ([selStr componentsSeparatedByString:@":"].count > 2) return NO;
-    
-    if ([selStr hasPrefix:@"set"]) {
-        class_addMethod(self.class, sel, (IMP)_DictionarySetter, "v@:@");
-    } else {
-        class_addMethod(self.class, sel, (IMP)_DictionaryGetter, "@@:");
-    }
-    return YES;
-}
-
 #pragma mark - Life Circle
 - (id)initWithDict:(NSDictionary *)dict {
     if (!dict) return nil;
@@ -46,6 +33,7 @@
     return [[YFModel alloc] initWithDict:dict];
 }
 
+#pragma mark - Overwrite
 - (NSString *)descriptionWithLocale:(id)locale {
     return [self description];
 }
@@ -119,4 +107,18 @@ id _DictionaryGetter(YFModel *self, SEL sel) {
     return value;
 }
 
+#pragma mark - Method Resolve
++ (BOOL)resolveInstanceMethod:(SEL)sel {
+    NSString *selStr = NSStringFromSelector(sel);
+    if ([selStr componentsSeparatedByString:@":"].count > 2) return NO;
+    
+    if ([selStr hasPrefix:@"set"]) {
+        class_addMethod(self.class, sel, (IMP)_DictionarySetter, "v@:@");
+    } else {
+        class_addMethod(self.class, sel, (IMP)_DictionaryGetter, "@@:");
+    }
+    return YES;
+}
+
 @end
+
