@@ -20,6 +20,7 @@
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic, strong) YFModel<Human> *user;
 @property (nonatomic, strong) NSString *create_at;
+@property (nonatomic, strong) NSArray<Human> *users;
 @end
 
 @interface YFModelTests : XCTestCase
@@ -42,37 +43,58 @@
                            @"name" : @"laizw",
                            @"sex"  : @"man"
                            };
-    YFModel<Human> *human = [YFModel modelWithJSON:dict];
+    id<Human> human = [dict modelWithProtocol:@protocol(Human)];
     NSLog(@"name : %@, sex : %@", human.name, human[@"sex"]);
     
     XCTAssertNotNil(human);
     XCTAssert([human.name isEqualToString:@"laizw"]);
     XCTAssert([human[@"sex"] isEqualToString:@"man"]);
+
+    human.name = @"lzw";
+    XCTAssert([human.name isEqualToString:@"lzw"]);
 }
 
 - (void)testModelsContainsModels {
     NSDictionary *dict = @{
                            @"text" : @"hello",
                            @"user" : @{
+                                   @"name" : @"laizw",
+                                   @"sex"  : @"man"
+                                   },
+                           @"users" : @[
+                                   @{
                                        @"name" : @"laizw",
-                                       @"sex"  : @"man"
+                                       @"sex"  : @"male"
+                                       },
+                                   @{
+                                       @"name" : @"lzw",
+                                       @"sex"  : @"male"
+                                       },
+                                   @{
+                                       @"name" : @"ywy",
+                                       @"sex"  : @"female"
                                        }
+                                   ]
                            };
     
-    YFModel<Message> *msg = [YFModel modelWithJSON:dict];
-    NSLog(@"%@ say: %@", msg.user.name, msg.text);
+    id<Message> msg = [[dict modelWithProtocol:@protocol(Message)] generic:^NSDictionary *{
+        return @{@"user" : @"Human", @"users" : @protocol(Human)};
+    }];
+    NSLog(@"%@", msg.users);
     
     XCTAssertNotNil(msg);
     XCTAssert([msg.text isEqualToString:@"hello"]);
     XCTAssertNotNil(msg.user);
     XCTAssert([msg.user.name isEqualToString:@"laizw"]);
     XCTAssert([msg.user.sex isEqualToString:@"man"]);
+    XCTAssert(msg.users.count == 3);
+    XCTAssert([[msg.users[2] sex] isEqualToString:@"female"]);
 }
 
 - (void)testJSONString {
     NSString *jsonString = @"{\"name\":\"laizw\", \"sex\":\"man\", \"age\":20}";
     
-    YFModel<Human> *human = [YFModel modelWithJSON:jsonString];
+    id<Human> human = [jsonString modelWithProtocol:@protocol(Human)];
     NSLog(@"name : %@, sex : %@, age : %@", human.name, human.sex, human[@"age"]);
     
     XCTAssertNotNil(human);

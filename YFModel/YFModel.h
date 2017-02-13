@@ -13,14 +13,26 @@ FOUNDATION_EXPORT const unsigned char YFModelVersionString[];
 
 @interface YFModel : NSObject
 
-- (id)initWithJSON:(id)json;
-+ (id)modelWithJSON:(id)json;
+@property (nonatomic, unsafe_unretained) Protocol *protocol;
 
 - (id)JSONObject;
-//- (id)JSONStrng;
-//- (id)JSONData;
+
+- (id)generic:(NSDictionary *(^)())generic;
 
 - (id)objectForKeyedSubscript:(NSString *)key;
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
 
+@end
+
+@protocol YFModelInitialize <NSObject>
+- (id)modelWithProtocol:(Protocol *)protocol;
+@end
+
+@interface NSDictionary (YFModel) <YFModelInitialize>
+@end
+
+@interface NSString (YFModel) <YFModelInitialize>
+@end
+
+@interface NSData (YFModel) <YFModelInitialize>
 @end
