@@ -38,6 +38,18 @@ __attribute__((overloadable)) extern id YFProtocolModelCreate(Protocol *protocol
         typedef struct _name_ _body_ _name_; \
         YFProtocolRegisterStruct(_name_)
 
+/*
+ 默认注册了一些常用的结构体
+ 
+ YFProtocolRegisterStruct(CGRect)
+ YFProtocolRegisterStruct(CGSize)
+ YFProtocolRegisterStruct(CGPoint)
+ YFProtocolRegisterStruct(NSRange)
+ YFProtocolRegisterStruct(UIOffset)
+ YFProtocolRegisterStruct(CGVector)
+ YFProtocolRegisterStruct(UIEdgeInsets)
+ YFProtocolRegisterStruct(CGAffineTransform)
+ */
 
 /**
  注册 Struct 使它支持 ProtocolModel 访问和赋值
@@ -60,15 +72,3 @@ __attribute__((overloadable)) extern id YFProtocolModelCreate(Protocol *protocol
 }                                                                                   \
 @end
 
-/*
- 默认注册了一些常用的结构体
- 
- YFProtocolRegisterStruct(CGRect)
- YFProtocolRegisterStruct(CGSize)
- YFProtocolRegisterStruct(CGPoint)
- YFProtocolRegisterStruct(NSRange)
- YFProtocolRegisterStruct(UIOffset)
- YFProtocolRegisterStruct(CGVector)
- YFProtocolRegisterStruct(UIEdgeInsets)
- YFProtocolRegisterStruct(CGAffineTransform)
- */

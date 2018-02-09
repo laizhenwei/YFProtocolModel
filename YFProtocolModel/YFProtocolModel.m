@@ -177,7 +177,7 @@ NSDictionary * YFDictionaryWithJSON(id json) {
     if ([json isKindOfClass:[NSDictionary class]]) {
         dic = json;
     } else if ([json isKindOfClass:[NSString class]]) {
-        jsonData = [(NSString *)json dataUsingEncoding : NSUTF8StringEncoding];
+        jsonData = [(NSString *)json dataUsingEncoding:NSUTF8StringEncoding];
     } else if ([json isKindOfClass:[NSData class]]) {
         jsonData = json;
     }
