@@ -105,18 +105,30 @@ static int const kIntent = 4;
 - (void)processTransformer {
 
     Class<YFProtocolModel> transformer = NSClassFromString([NSString stringWithFormat:@"__YFProtocol_%@_transformer__", self.protocolInfo.name]);
+    
+    NSDictionary *mapper;
     if (transformer) {
-        NSDictionary *mapper;
-        // property:key Mapper
         if ([transformer respondsToSelector:@selector(modelPropertyKeyMapper)]) {
             mapper = [transformer modelPropertyKeyMapper];
-            [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                if (mapper[obj.name]) {
-                    obj.key = mapper[obj.name];
-                }
-            }];
         }
     }
+    
+    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        // key Mapper
+        if (mapper[obj.name]) {
+            obj.key = mapper[obj.name];
+        }
+        
+        // Nested
+        if (obj.flag & YFPropertyFlagProtocolType) {
+            Protocol *protocol = NSProtocolFromString(obj.type);
+            if (protocol) {
+                NSDictionary *subJson = [self.backend valueForKey:obj.key];
+                YFProtocolModel *model = YFProtocolModelCreate(protocol, subJson);
+                [self.backend setValue:model forKey:obj.key];
+            }
+        }
+    }];
 }
 
 - (NSString *)description {
@@ -153,10 +165,6 @@ static int const kIntent = 4;
     }];
     
     if (pInfo) {
-        if (pInfo.flag & YFPropertyFlagProtocolType) {
-            NSLog(@"%@", pInfo);
-        }
-        
         if (sel_isEqual(sel, pInfo.setter)) {
             [self performPropertySetter:pInfo withInvocation:invocation];
         } else {

@@ -99,9 +99,12 @@ static inline BOOL YFPropertyEncodeTypeIsNumber(YFPropertyEncodeType encodeType)
                 
                 NSScanner *scanner = [NSScanner scannerWithString:_type];
                 if (![scanner scanString:@"@\"" intoString:NULL]) {
+                    // Number Type
                     if (YFPropertyEncodeTypeIsNumber(_encodeType)) {
                         _flag |= YFPropertyFlagNumberType;
-                    } else if ([scanner scanString:@"{" intoString:NULL]) {
+                    }
+                    // Struct Type
+                    else if ([scanner scanString:@"{" intoString:NULL]) {
                         _flag |= YFPropertyFlagStructType;
                         NSString *structType = nil;
                          if ([scanner scanUpToString:@"=" intoString:&structType]) {
@@ -110,30 +113,29 @@ static inline BOOL YFPropertyEncodeTypeIsNumber(YFPropertyEncodeType encodeType)
                              }
                          }
                     }
-                    continue;
                 }
-                
-                // object type
-                _flag |= YFPropertyFlagOjectType;
-                
-                NSString *className;
-                if ([scanner scanUpToCharactersFromSet: [NSCharacterSet characterSetWithCharactersInString:@"\"<"] intoString:&className]) {
-                    _flag |= YFPropertyFlagProtocolType;
-                    if (className.length) _type = className;
-                }
-                
-                NSMutableArray *generics;
-                while ([scanner scanString:@"<" intoString:NULL]) {
-                    NSString *generic = nil;
-                    if ([scanner scanUpToString:@">" intoString: &generic]) {
-                        if (generic.length) {
-                            if (!generics) generics = [NSMutableArray new];
-                            [generics addObject:generic];
+                // Object Type
+                else {
+                    _flag |= YFPropertyFlagOjectType;
+                    
+                    // Generic Type
+                    NSMutableArray *generics;
+                    while ([scanner scanString:@"<" intoString:NULL]) {
+                        NSString *generic = nil;
+                        if ([scanner scanUpToString:@">" intoString: &generic]) {
+                            if (generic.length) {
+                                if (!generics) generics = [NSMutableArray new];
+                                [generics addObject:generic];
+                            }
                         }
+                        [scanner scanString:@">" intoString:NULL];
                     }
-                    [scanner scanString:@">" intoString:NULL];
+                    if (generics.count == 1) {
+                        _type = generics[0];
+                        _flag |= YFPropertyFlagProtocolType;
+                    }
+                    _generics = generics;
                 }
-                _generics = generics;
                 break;
         }
     }
