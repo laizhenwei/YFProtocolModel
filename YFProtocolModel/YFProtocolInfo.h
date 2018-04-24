@@ -41,8 +41,8 @@ typedef NS_OPTIONS(NSUInteger, YFPropertyFlag) {
     YFPropertyFlagCustomGetter  = 1 << 2,
     YFPropertyFlagReadonly      = 1 << 3,
     
-    YFPropertyFlagProtocolType  = 1 << 4,
-    YFPropertyFlagOjectType     = 1 << 5,
+    YFPropertyFlagOjectType     = 1 << 4,
+    YFPropertyFlagProtocolType  = 1 << 5,
     YFPropertyFlagStructType    = 1 << 6,
     YFPropertyFlagNumberType    = 1 << 7,
     
@@ -59,6 +59,7 @@ typedef NS_OPTIONS(NSUInteger, YFPropertyFlag) {
 @property (nonatomic, assign, readonly) YFPropertyEncodeType encodeType;
 
 @property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, copy) NSString *key;
 
 @property (nonatomic, copy, readonly) NSArray<NSString *> *generics;
 

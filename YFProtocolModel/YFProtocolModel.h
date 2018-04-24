@@ -11,10 +11,6 @@
 FOUNDATION_EXPORT double YFProtocolModelVersionNumber;
 FOUNDATION_EXPORT const unsigned char YFProtocolModelVersionString[];
 
-@protocol YFProtocolModel <NSObject>
-@property (nonatomic, strong, readonly) Protocol *protocol;
-@end
-
 /**
  创建 Protocol Model
  
@@ -24,6 +20,30 @@ FOUNDATION_EXPORT const unsigned char YFProtocolModelVersionString[];
 __attribute__((overloadable)) extern id YFProtocolModelCreate(Protocol *protocol, id json);
 __attribute__((overloadable)) extern id YFProtocolModelCreate(Protocol *protocol);
 
+
+/**
+ Base Protocol
+ */
+@protocol YFProtocolModel <NSObject>
+@optional
+
+@property (nonatomic, strong, readonly) Protocol *protocol;
+
++ (NSDictionary<NSString *, id> *)modelPropertyKeyMapper;
+
+
+@end
+
+#define implementation(_protocol_) _protocol_; \
+_Pragma("clang diagnostic push") \
+_Pragma("clang diagnostic ignored \"-Wobjc-protocol-property-synthesis\"") \
+@interface __YFProtocol_ ## _protocol_ ## _transformer__ : NSObject <_protocol_, YFProtocolModel> @end\
+@implementation __YFProtocol_ ## _protocol_ ## _transformer__ \
+_Pragma("clang diagnostic pop") \
+
+#define struct(_name_, _body_) YFProtocolModel; \
+        typedef struct _name_ _body_ _name_; \
+        YFProtocolRegisterStruct(_name_)
 
 /**
  定义一个注册 struct 类型

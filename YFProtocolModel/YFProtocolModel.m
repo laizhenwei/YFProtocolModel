@@ -36,6 +36,54 @@ static inline SEL YFRealPropertySelector(YFPropertyInfo *pInfo, BOOL setter) {
     }
 }
 
+static int const kIntent = 4;
+
+@protocol YFProtocolModelDebug
+- (NSString *)descriptionWithLevel:(int)level;
+@end
+
+@interface NSDictionary (YFProtocolModelDeug) <YFProtocolModelDebug>
+@end
+@implementation NSDictionary (YFProtocolModelDeug)
+- (NSString *)descriptionWithLevel:(int)level {
+    NSMutableString *desc = [NSMutableString string];
+    [desc appendFormat:@"%*s{\n", level * kIntent, ""];
+    level++;
+    [self enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+        if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
+            [desc appendString:[obj descriptionWithLevel:level]];
+        } else {
+            [desc appendFormat:@"%*s%@ : %@", level * kIntent, "", key, obj];
+        }
+        [desc appendString:@",\n"];
+    }];
+    level--;
+    [desc appendFormat:@"%*s}\n", level * kIntent, ""];
+    return desc;
+}
+@end
+
+@interface NSArray (YFProtocolModelDeug) <YFProtocolModelDebug>
+@end
+@implementation NSArray (YFProtocolModelDeug)
+- (NSString *)descriptionWithLevel:(int)level {
+    NSMutableString *desc = [NSMutableString string];
+    [desc appendFormat:@"%*s(\n", level * kIntent, ""];
+    level++;
+    [self enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
+            [desc appendString:[obj descriptionWithLevel:level]];
+        } else {
+            [desc appendFormat:@"%*s%@", level * kIntent, "", obj];
+        }
+        [desc appendString:@"\n"];
+    }];
+    level--;
+    [desc appendFormat:@"%*s)\n", level * kIntent, ""];
+    return desc;
+}
+@end
+
 @interface YFProtocolModel : NSProxy <YFProtocolModel>
 @property (nonatomic, strong) Protocol *protocol;
 @property (nonatomic, strong) YFProtocolInfo *protocolInfo;
@@ -50,17 +98,31 @@ static inline SEL YFRealPropertySelector(YFPropertyInfo *pInfo, BOOL setter) {
     self.backend = (json ?: @{}).mutableCopy;
     self.protocol = protocol;
     self.protocolInfo = [YFProtocolInfo infoWithProtocol:protocol];
+    [self processTransformer];
     return self;
+}
+
+- (void)processTransformer {
+
+    Class<YFProtocolModel> transformer = NSClassFromString([NSString stringWithFormat:@"__YFProtocol_%@_transformer__", self.protocolInfo.name]);
+    if (transformer) {
+        NSDictionary *mapper;
+        // property:key Mapper
+        if ([transformer respondsToSelector:@selector(modelPropertyKeyMapper)]) {
+            mapper = [transformer modelPropertyKeyMapper];
+            [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                if (mapper[obj.name]) {
+                    obj.key = mapper[obj.name];
+                }
+            }];
+        }
+    }
 }
 
 - (NSString *)description {
     NSMutableString *desc = [[NSMutableString alloc] init];
     [desc appendFormat:@"<%@ %p> \n", self.protocolInfo.name, self];
-    [desc appendString:@"{\n"];
-    [self.backend enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
-        [desc appendFormat:@"\t%@: %@\n", key, obj];
-    }];
-    [desc appendString:@"}"];
+    [desc appendString:[self.backend descriptionWithLevel:0]];
     return desc;
 }
 
@@ -76,7 +138,6 @@ static inline SEL YFRealPropertySelector(YFPropertyInfo *pInfo, BOOL setter) {
             *stop = YES;
         }
     }];
-    
     return [self.backend methodSignatureForSelector:realSEL];
 }
 
@@ -92,6 +153,10 @@ static inline SEL YFRealPropertySelector(YFPropertyInfo *pInfo, BOOL setter) {
     }];
     
     if (pInfo) {
+        if (pInfo.flag & YFPropertyFlagProtocolType) {
+            NSLog(@"%@", pInfo);
+        }
+        
         if (sel_isEqual(sel, pInfo.setter)) {
             [self performPropertySetter:pInfo withInvocation:invocation];
         } else {
@@ -128,14 +193,14 @@ static inline SEL YFRealPropertySelector(YFPropertyInfo *pInfo, BOOL setter) {
                 break;
         }
     }
-    NSString *key = property.name;
+    NSString *key = property.key;
     invocation.selector = YFRealPropertySelector(property, YES);
     [invocation setArgument:&key atIndex:3];
     [invocation invokeWithTarget:self.backend];
 }
 
 - (void)performPropertyGetter:(YFPropertyInfo *)property withInvocation:(NSInvocation *)invocation {
-    NSString *key = property.name;
+    NSString *key = property.key;
     invocation.selector = YFRealPropertySelector(property, NO);
     [invocation setArgument:&key atIndex:2];
     [invocation invokeWithTarget:self.backend];

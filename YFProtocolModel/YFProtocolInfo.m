@@ -75,6 +75,7 @@ static inline BOOL YFPropertyEncodeTypeIsNumber(YFPropertyEncodeType encodeType)
     _property = property;
     
     _name = [NSString stringWithUTF8String:property_getName(property)];
+    _key = _name;
     unsigned int count = 0;
     objc_property_attribute_t *attrs = property_copyAttributeList(property, &count);
     
@@ -136,7 +137,7 @@ static inline BOOL YFPropertyEncodeTypeIsNumber(YFPropertyEncodeType encodeType)
                 break;
         }
     }
-    
+
     if (attrs) {
         free(attrs);
         attrs = NULL;
