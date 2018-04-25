@@ -35,7 +35,7 @@
 - (void)testJSON2NestedModel {
     NSDictionary *dict = @{@"name": @"book_name", @"author": @{@"name": @"laizw"}};
     id<Book> book = YFProtocolModelCreate(@protocol(Book), dict);
-    NSLog(@"%@ %@ %@", book.author, book.author.name, book);
+    NSLog(@"%@ %@ %@", book.author, book.author, book.author);
 }
 
 @end

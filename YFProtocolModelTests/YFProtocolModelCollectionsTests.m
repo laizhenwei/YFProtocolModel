@@ -45,4 +45,22 @@
     NSLog(@"%@", test);
 }
 
+- (void)testSet {
+    id<NSSetTest> test = YFProtocolModelCreate(@protocol(NSSetTest));
+    test.set = [NSSet setWithObject:@1];
+    test.mutableSet = [NSMutableSet setWithObjects:@1, @2, nil];
+    NSLog(@"%@", test);
+    [test.mutableSet addObject:@3];
+    [test.mutableSet addObject:@1];
+    NSLog(@"%@", test);
+}
+
+- (void)testJson2EditableCollectionModel {
+    NSDictionary *json = @{@"mutableArray": @[@"1", @"2", @"3"]};
+    id<NSArrayTests> test = YFProtocolModelCreate(@protocol(NSArrayTests), json);
+    NSLog(@"%@", test);
+    [test.mutableArray addObject:@"4"];
+    NSLog(@"%@", test);
+}
+
 @end

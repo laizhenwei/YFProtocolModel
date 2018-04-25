@@ -17,6 +17,7 @@
 		C621F5FF202D7C9B003C8238 /* YFProtocolModelCollectionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C621F5FE202D7C9B003C8238 /* YFProtocolModelCollectionsTests.m */; };
 		C621F601202FE729003C8238 /* YFProtocolKeyMapperTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C621F600202FE729003C8238 /* YFProtocolKeyMapperTests.m */; };
 		C621F603202FEDE3003C8238 /* YFProtocolModelNested.m in Sources */ = {isa = PBXBuildFile; fileRef = C621F602202FEDE3003C8238 /* YFProtocolModelNested.m */; };
+		C69B08B02090732F002786E4 /* YFProtocolContainerGenericTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C69B08AF2090732F002786E4 /* YFProtocolContainerGenericTests.m */; };
 		C6B678431E48367F00D17F09 /* YFProtocolModel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6B678391E48367F00D17F09 /* YFProtocolModel.framework */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +42,7 @@
 		C621F5FE202D7C9B003C8238 /* YFProtocolModelCollectionsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YFProtocolModelCollectionsTests.m; sourceTree = "<group>"; };
 		C621F600202FE729003C8238 /* YFProtocolKeyMapperTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YFProtocolKeyMapperTests.m; sourceTree = "<group>"; };
 		C621F602202FEDE3003C8238 /* YFProtocolModelNested.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YFProtocolModelNested.m; sourceTree = "<group>"; };
+		C69B08AF2090732F002786E4 /* YFProtocolContainerGenericTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YFProtocolContainerGenericTests.m; sourceTree = "<group>"; };
 		C6B678391E48367F00D17F09 /* YFProtocolModel.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = YFProtocolModel.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6B6783D1E48367F00D17F09 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C6B678421E48367F00D17F09 /* YFProtocolModelTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YFProtocolModelTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -105,6 +107,7 @@
 				C621F5FE202D7C9B003C8238 /* YFProtocolModelCollectionsTests.m */,
 				C621F600202FE729003C8238 /* YFProtocolKeyMapperTests.m */,
 				C621F602202FEDE3003C8238 /* YFProtocolModelNested.m */,
+				C69B08AF2090732F002786E4 /* YFProtocolContainerGenericTests.m */,
 				C6B678491E48367F00D17F09 /* Info.plist */,
 			);
 			path = YFProtocolModelTests;
@@ -234,6 +237,7 @@
 				C621F5FF202D7C9B003C8238 /* YFProtocolModelCollectionsTests.m in Sources */,
 				C621F601202FE729003C8238 /* YFProtocolKeyMapperTests.m in Sources */,
 				C621F5FD202D79A3003C8238 /* YFProtocolModelNSTypeTests.m in Sources */,
+				C69B08B02090732F002786E4 /* YFProtocolContainerGenericTests.m in Sources */,
 				C621F5F9202D48AF003C8238 /* YFProtocolModelTests.m in Sources */,
 				C621F5FB202D7559003C8238 /* YFProtocolModelStructTests.m in Sources */,
 				C621F603202FEDE3003C8238 /* YFProtocolModelNested.m in Sources */,

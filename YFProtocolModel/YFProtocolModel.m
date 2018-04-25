@@ -8,6 +8,10 @@
 
 #import "YFProtocolModel.h"
 #import "YFProtocolInfo.h"
+#import <objc/runtime.h>
+
+#pragma mark - Defines
+static int const kIntent = 4;
 
 YFProtocolRegisterStruct(CGRect)
 YFProtocolRegisterStruct(CGSize)
@@ -18,72 +22,20 @@ YFProtocolRegisterStruct(CGVector)
 YFProtocolRegisterStruct(UIEdgeInsets)
 YFProtocolRegisterStruct(CGAffineTransform)
 
-static inline SEL YFRealPropertySelector(YFPropertyInfo *pInfo, BOOL setter) {
-    if (setter) {
-        if (pInfo.flag & YFPropertyFlagStructType) {
-            NSString *selStr = [NSString stringWithFormat:@"yf_protocol_model_set_%@:forKey:", pInfo.structType];
-            return NSSelectorFromString(selStr);
-        } else {
-            return @selector(setValue:forKey:);
-        }
-    } else {
-        if (pInfo.flag & YFPropertyFlagStructType) {
-            NSString *selStr = [NSString stringWithFormat:@"yf_protocol_model_get_%@ForKey:", pInfo.structType];
-            return NSSelectorFromString(selStr);
-        } else {
-            return @selector(valueForKey:);
-        }
-    }
-}
 
-static int const kIntent = 4;
-
+#pragma mark - YFProtocolModelDebug
 @protocol YFProtocolModelDebug
 - (NSString *)descriptionWithLevel:(int)level;
 @end
 
 @interface NSDictionary (YFProtocolModelDeug) <YFProtocolModelDebug>
 @end
-@implementation NSDictionary (YFProtocolModelDeug)
-- (NSString *)descriptionWithLevel:(int)level {
-    NSMutableString *desc = [NSMutableString string];
-    [desc appendFormat:@"%*s{\n", level * kIntent, ""];
-    level++;
-    [self enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
-        if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
-            [desc appendString:[obj descriptionWithLevel:level]];
-        } else {
-            [desc appendFormat:@"%*s%@ : %@", level * kIntent, "", key, obj];
-        }
-        [desc appendString:@",\n"];
-    }];
-    level--;
-    [desc appendFormat:@"%*s}\n", level * kIntent, ""];
-    return desc;
-}
-@end
 
 @interface NSArray (YFProtocolModelDeug) <YFProtocolModelDebug>
 @end
-@implementation NSArray (YFProtocolModelDeug)
-- (NSString *)descriptionWithLevel:(int)level {
-    NSMutableString *desc = [NSMutableString string];
-    [desc appendFormat:@"%*s(\n", level * kIntent, ""];
-    level++;
-    [self enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
-            [desc appendString:[obj descriptionWithLevel:level]];
-        } else {
-            [desc appendFormat:@"%*s%@", level * kIntent, "", obj];
-        }
-        [desc appendString:@"\n"];
-    }];
-    level--;
-    [desc appendFormat:@"%*s)\n", level * kIntent, ""];
-    return desc;
-}
-@end
 
+
+#pragma mark - YFProtocolModel Interface
 @interface YFProtocolModel : NSProxy <YFProtocolModel>
 @property (nonatomic, strong) Protocol *protocol;
 @property (nonatomic, strong) YFProtocolInfo *protocolInfo;
@@ -95,28 +47,78 @@ static int const kIntent = 4;
 @implementation YFProtocolModel
 
 - (id)initWithProtocol:(Protocol *)protocol json:(NSDictionary *)json {
-    self.backend = (json ?: @{}).mutableCopy;
     self.protocol = protocol;
     self.protocolInfo = [YFProtocolInfo infoWithProtocol:protocol];
+    self.backend = json ? [self buildEditableContainer:json] : @{}.mutableCopy;
     [self processTransformer];
     return self;
 }
 
+- (NSString *)description {
+    NSMutableString *desc = [[NSMutableString alloc] init];
+    [desc appendFormat:@"<%@ %p> \n", self.protocolInfo.name, self];
+    [desc appendString:[self.backend descriptionWithLevel:0]];
+    return desc;
+}
+
+
+#pragma mark - Process
+- (id)buildEditableContainer:(id)json {
+    // 非容器
+    if (![json conformsToProtocol:@protocol(NSFastEnumeration)]) {
+        return json;
+    }
+    // 字典类型
+    else if ([json isKindOfClass:[NSDictionary class]]) {
+        NSMutableDictionary *dict = [json mutableCopy];
+        [dict enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+            id newObj = [self buildEditableContainer:obj];
+            [dict setObject:newObj forKey:key];
+        }];
+        return dict;
+    }
+    // mutable 集合类型
+    else if ([json conformsToProtocol:@protocol(NSMutableCopying)]) {
+        __typeof(json) container = [json mutableCopy];
+        for (int i = 0; i < [json count]; i++) {
+            id newObj = [self buildEditableContainer:json[i]];
+            if (newObj) container[i] = newObj;
+        }
+        return container;
+    }
+    return json;
+}
+
 - (void)processTransformer {
 
-    Class<YFProtocolModel> transformer = NSClassFromString([NSString stringWithFormat:@"__YFProtocol_%@_transformer__", self.protocolInfo.name]);
+    Class<YFProtocolModel> transformer = NSClassFromString([NSString stringWithFormat:@"__YFTransformer_%@", self.protocolInfo.name]);
     
-    NSDictionary *mapper;
-    if (transformer) {
-        if ([transformer respondsToSelector:@selector(modelPropertyKeyMapper)]) {
-            mapper = [transformer modelPropertyKeyMapper];
-        }
+    NSDictionary *keyMapperDict;
+    if ([transformer respondsToSelector:@selector(modelPropertyKeyMapper)]) {
+        keyMapperDict = [transformer modelPropertyKeyMapper];
     }
     
-    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+    NSDictionary *containerMapperDict;
+    if ([transformer respondsToSelector:@selector(modelContainerPropertyGenericClass)]) {
+        containerMapperDict = [transformer modelContainerPropertyGenericClass];
+    }
+    
+    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo *obj, NSUInteger idx, BOOL *stop) {
         // key Mapper
-        if (mapper[obj.name]) {
-            obj.key = mapper[obj.name];
+        if (keyMapperDict && keyMapperDict[obj.name]) {
+            id mapper = keyMapperDict[obj.name];
+            if ([mapper isKindOfClass:[NSString class]]) {
+                if ([mapper length]) {
+                    obj.key = mapper;
+                }
+            } else if ([mapper isKindOfClass:[NSArray class]]) {
+                [(NSArray *)mapper enumerateObjectsUsingBlock:^(id key, NSUInteger idx, BOOL *stop) {
+                    if ([self.backend valueForKeyPath:key]) {
+                        obj.key = key;
+                        *stop = YES;
+                    }
+                }];
+            }
         }
         
         // Nested
@@ -128,25 +130,41 @@ static int const kIntent = 4;
                 [self.backend setValue:model forKey:obj.key];
             }
         }
+        
+        // Container
+        if (containerMapperDict && containerMapperDict[obj.name]) {
+            Protocol *protocol;
+            id generic = containerMapperDict[obj.name];
+            if ([generic isKindOfClass:NSClassFromString(@"Protocol")]) {
+                protocol = generic;
+            }
+            
+            if (protocol) {
+                NSMutableArray *arr = @[].mutableCopy;
+                NSArray *oldArr = [self.backend valueForKeyPath:obj.key];
+                if ([oldArr isKindOfClass:[NSArray class]]) {
+                    for (id json in oldArr) {
+                        id model = YFProtocolModelCreate(protocol, json);
+                        [arr addObject:model];
+                    }
+                }
+                [self.backend setValue:arr forKeyPath:obj.key];
+            }
+        }
     }];
 }
 
-- (NSString *)description {
-    NSMutableString *desc = [[NSMutableString alloc] init];
-    [desc appendFormat:@"<%@ %p> \n", self.protocolInfo.name, self];
-    [desc appendString:[self.backend descriptionWithLevel:0]];
-    return desc;
-}
 
-
+#pragma mark - Message Forward
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
+    // 根据用户调用的 setter、getter 查找字典实际 setter、getter 的方法签名
     __block SEL realSEL = sel;
-    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo *obj, NSUInteger idx, BOOL *stop) {
         if (sel_isEqual(sel, obj.setter)) {
-            realSEL = YFRealPropertySelector(obj, YES);
+            realSEL = [self setterSelectorForBackendWithProperty:obj];
             *stop = YES;
         } else if (sel_isEqual(sel, obj.getter)) {
-            realSEL = YFRealPropertySelector(obj, NO);
+            realSEL = [self getterSelectorForBackendWithProperty:obj];
             *stop = YES;
         }
     }];
@@ -154,29 +172,46 @@ static int const kIntent = 4;
 }
 
 - (void)forwardInvocation:(NSInvocation *)invocation {
-    SEL sel = invocation.selector;
-    
-    __block YFPropertyInfo *pInfo = nil;
-    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if (sel_isEqual(sel, obj.setter) || sel_isEqual(sel, obj.getter)) {
-            pInfo = obj;
+    // 标志已完成转发
+    __block BOOL done = NO;
+    [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo *obj, NSUInteger idx, BOOL *stop) {
+        if (sel_isEqual(invocation.selector, obj.setter)) {
+            invocation.selector = [self setterSelectorForBackendWithProperty:obj];
+            [self performPropertySetter:obj withInvocation:invocation];
             *stop = YES;
+            done = YES;
+        } else if (sel_isEqual(invocation.selector, obj.getter)) {
+            invocation.selector = [self getterSelectorForBackendWithProperty:obj];
+            [self performPropertyGetter:obj withInvocation:invocation];
+            *stop = YES;
+            done = YES;
         }
     }];
     
-    if (pInfo) {
-        if (sel_isEqual(sel, pInfo.setter)) {
-            [self performPropertySetter:pInfo withInvocation:invocation];
-        } else {
-            [self performPropertyGetter:pInfo withInvocation:invocation];
-        }
-    } else {
+    // 默认转发所有非 setter、getter 方法
+    if (!done) {
         [invocation invokeWithTarget:self.backend];
     }
 }
 
-- (void)performPropertySetter:(YFPropertyInfo *)property withInvocation:(NSInvocation *)invocation {
-    if (property.flag & YFPropertyFlagNumberType) {
+- (SEL)setterSelectorForBackendWithProperty:(YFPropertyInfo *)pInfo {
+    if (pInfo.flag & YFPropertyFlagStructType) {
+        NSString *selStr = [NSString stringWithFormat:@"set%@:forKey:", pInfo.structType];
+        return NSSelectorFromString(selStr);
+    }
+    return @selector(setValue:forKeyPath:);
+}
+
+- (SEL)getterSelectorForBackendWithProperty:(YFPropertyInfo *)pInfo {
+    if (pInfo.flag & YFPropertyFlagStructType) {
+        NSString *selStr = [NSString stringWithFormat:@"get%@ForKey:", pInfo.structType];
+        return NSSelectorFromString(selStr);
+    }
+    return @selector(valueForKeyPath:);
+}
+
+- (void)performPropertySetter:(YFPropertyInfo *)pInfo withInvocation:(NSInvocation *)invocation {
+    if (pInfo.flag & YFPropertyFlagNumberType) {
         #define YFPropertySetterNumberCase(_case_, _type_) \
             case _case_: { \
                 _type_ arg; \
@@ -185,7 +220,7 @@ static int const kIntent = 4;
                 [invocation setArgument:&val atIndex:2]; }\
                 break;
         
-        switch (property.encodeType) {
+        switch (pInfo.encodeType) {
             YFPropertySetterNumberCase(YFPropertyEncodeTypeInt8, int8_t)
             YFPropertySetterNumberCase(YFPropertyEncodeTypeUInt8, uint8_t)
             YFPropertySetterNumberCase(YFPropertyEncodeTypeInt16, int16_t)
@@ -201,19 +236,17 @@ static int const kIntent = 4;
                 break;
         }
     }
-    NSString *key = property.key;
-    invocation.selector = YFRealPropertySelector(property, YES);
+    NSString *key = pInfo.key;
     [invocation setArgument:&key atIndex:3];
     [invocation invokeWithTarget:self.backend];
 }
 
-- (void)performPropertyGetter:(YFPropertyInfo *)property withInvocation:(NSInvocation *)invocation {
-    NSString *key = property.key;
-    invocation.selector = YFRealPropertySelector(property, NO);
+- (void)performPropertyGetter:(YFPropertyInfo *)pInfo withInvocation:(NSInvocation *)invocation {
+    NSString *key = pInfo.key;
     [invocation setArgument:&key atIndex:2];
     [invocation invokeWithTarget:self.backend];
     
-    if (property.flag & YFPropertyFlagNumberType) {
+    if (pInfo.flag & YFPropertyFlagNumberType) {
         #define YFPropertyGetterNumberCase(_case_, _type_, _tran_) \
             case _case_: { \
                 _type_ ret = [(NSNumber *)val _tran_]; \
@@ -222,7 +255,7 @@ static int const kIntent = 4;
         id val;
         [invocation getReturnValue:&val];
         if (val) {
-            switch (property.encodeType) {
+            switch (pInfo.encodeType) {
                 YFPropertyGetterNumberCase(YFPropertyEncodeTypeInt8, int8_t, charValue)
                 YFPropertyGetterNumberCase(YFPropertyEncodeTypeUInt8, uint8_t, unsignedCharValue)
                 YFPropertyGetterNumberCase(YFPropertyEncodeTypeInt16, int16_t, shortValue)
@@ -243,7 +276,9 @@ static int const kIntent = 4;
 
 @end
 
-NSDictionary * YFDictionaryWithJSON(id json) {
+
+#pragma mark - Function Helper
+NSDictionary *__YFDictionaryWithJSON(id json) {
     if (!json || json == (id)kCFNull) return nil;
     NSDictionary *dic = nil;
     NSData *jsonData = nil;
@@ -282,9 +317,47 @@ __attribute__((overloadable)) id YFProtocolModelCreate(Protocol *protocol, id js
         }
         return arr;
     }
-    id jsonObject = YFDictionaryWithJSON(json);
+    id jsonObject = __YFDictionaryWithJSON(json);
     return YFProtocolModelCreate(protocol, jsonObject);
 }
 
 
+#pragma mark - YFProtocolModelDeug Implementation
+@implementation NSDictionary (YFProtocolModelDeug)
+- (NSString *)descriptionWithLevel:(int)level {
+    NSMutableString *desc = [NSMutableString string];
+    [desc appendFormat:@"%*s{\n", level * kIntent, ""];
+    level++;
+    [self enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+        if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
+            [desc appendString:[obj descriptionWithLevel:level]];
+        } else {
+            [desc appendFormat:@"%*s%@ : %@", level * kIntent, "", key, obj];
+        }
+        [desc appendString:@",\n"];
+    }];
+    level--;
+    [desc appendFormat:@"%*s}\n", level * kIntent, ""];
+    return desc;
+}
+@end
 
+
+@implementation NSArray (YFProtocolModelDeug)
+- (NSString *)descriptionWithLevel:(int)level {
+    NSMutableString *desc = [NSMutableString string];
+    [desc appendFormat:@"%*s(\n", level * kIntent, ""];
+    level++;
+    [self enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
+            [desc appendString:[obj descriptionWithLevel:level]];
+        } else {
+            [desc appendFormat:@"%*s%@", level * kIntent, "", obj];
+        }
+        [desc appendString:@"\n"];
+    }];
+    level--;
+    [desc appendFormat:@"%*s)\n", level * kIntent, ""];
+    return desc;
+}
+@end

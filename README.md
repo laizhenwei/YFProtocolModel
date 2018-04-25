@@ -44,10 +44,11 @@ human.age = 14;
 - [x] JSON 转 Protocol Model
 - [ ] ~~@optional 属性 (当前 `objc` 不支持读取 `@optional` 属性列表)~~
 - [x] 协议继承
+- [x] key 和属性名映射
+- [x] Model 嵌套
+- [x] 容器类属性
 - [ ] 类型转换
-- [ ] key 和属性名映射
-- [ ] 包含其他 Model
-- [ ] 容器类属性
+- [ ] Property Attribute 特性 (copy、weak等)
 - [ ] ······
 
 #### JSON 转 Protocol Model
@@ -138,5 +139,62 @@ YFProtocolDefineStruct(MyStruct, {
     BOOL flag;
     NSInteger num;
 })
+```
+
+##### 属性名映射
+
+通常，我们从接口得到的数据字段命名真是~~千奇百怪~~，这时候我们迫切需要属性名和 key 之间的映射。
+
+一般的 JSON to Model 都实现了这个功能，但是他们都是基于 Class 实现的，基于 Class 可以很方便实现对应转换方法来进行数据处理，但是我们是 Protocol Model，那得需要点技巧了。。
+
+```objc
+@protocol Feed
+@property NSString *uuid;
+@end
+
+@protocol implementation(Feed)
++ (NSDictionary<NSString *,id> *)modelPropertyKeyMapper {
+    return @{
+             @"uuid": @"id",
+             };
+}
+@end
+```
+
+这样我们就可以随心所欲的操作数据了。
+
+##### 容器类属性
+
+支持 Protocol 容器嵌套
+
+```objc
+@protocol Comment
+@property NSString *uuid;
+@end
+
+@protocol Post
+@property NSString *uuid;
+@property NSArray<Comment> *comments;
+@end
+
+@protocol implementation(Post)
++ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericClass {
+    return @{
+             @"comments": @protocol(Comment)
+             };
+}
+@end
+
+- (void)testContainerGenerics {
+    NSDictionary *json = @{@"uuid": @"wonderful",
+                           @"comments": @[
+                                   @{@"uuid": @"1"},
+                                   @{@"uuid": @"2"},
+                                   @{@"uuid": @"3"},
+                                   @{@"uuid": @"4"},
+                                    ]
+                           };
+    id<Post> test = YFProtocolModelCreate(@protocol(Post), json);
+}
 ```
 

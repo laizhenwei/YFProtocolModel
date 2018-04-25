@@ -34,16 +34,17 @@ YFProtocolDefineStruct(MyStruct, {
 @implementation YFProtocolModelStructTests
 
 - (void)testStruct {
-    id<TestStruct> testStruct = YFProtocolModelCreate(@protocol(TestStruct));
-    testStruct.point = CGPointMake(100, 100);
-    testStruct.classNumber = (ClassNumber){6,1};
-    testStruct.myStruct = (MyStruct){YES, 100};
     
-    XCTAssertTrue(CGPointEqualToPoint(testStruct.point, CGPointMake(100, 100)));
-    XCTAssertEqual(testStruct.classNumber.grade, 6);
-    XCTAssertEqual(testStruct.classNumber.number, 1);
-    XCTAssertEqual(testStruct.myStruct.flag, YES);
-    XCTAssertEqual(testStruct.myStruct.num, 100);
+    id<TestStruct> test = YFProtocolModelCreate(@protocol(TestStruct));
+    test.point = CGPointMake(100, 100);
+    test.classNumber = (ClassNumber){6,1};
+    test.myStruct = (MyStruct){YES, 100};
+    
+    XCTAssertTrue(CGPointEqualToPoint(test.point, CGPointMake(100, 100)));
+    XCTAssertEqual(test.classNumber.grade, 6);
+    XCTAssertEqual(test.classNumber.number, 1);
+    XCTAssertEqual(test.myStruct.flag, YES);
+    XCTAssertEqual(test.myStruct.num, 100);
 }
 
 @end

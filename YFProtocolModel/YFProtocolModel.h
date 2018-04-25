@@ -12,6 +12,20 @@ FOUNDATION_EXPORT double YFProtocolModelVersionNumber;
 FOUNDATION_EXPORT const unsigned char YFProtocolModelVersionString[];
 
 /**
+ Base Protocol
+ */
+@protocol YFProtocolModel <NSObject>
+@optional
+
+@property (nonatomic, strong, readonly) Protocol *protocol;
+
++ (NSDictionary<NSString *, id> *)modelPropertyKeyMapper;
+
++ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericClass;
+
+@end
+
+/**
  创建 Protocol Model
  
  @params protocol   协议
@@ -22,28 +36,23 @@ __attribute__((overloadable)) extern id YFProtocolModelCreate(Protocol *protocol
 
 
 /**
- Base Protocol
+ 实现 JSON 和 Model 转换的相关协议方法
+ 
+ eg.
+ @protocol implementation(MyProtocol)
+ + (NSDictionary<NSString *, id> *)modelPropertyKeyMapper {
+    ...
+ }
+ @end
  */
-@protocol YFProtocolModel <NSObject>
-@optional
+#define implementation(_protocol_) _protocol_;                                      \
+_Pragma("clang diagnostic push")                                                    \
+_Pragma("clang diagnostic ignored \"-Wobjc-protocol-property-synthesis\"")          \
+@interface __YFTransformer_ ## _protocol_ : NSObject <_protocol_, YFProtocolModel>  \
+@end                                                                                \
+@implementation __YFTransformer_ ## _protocol_                                      \
+_Pragma("clang diagnostic pop")                                                     \
 
-@property (nonatomic, strong, readonly) Protocol *protocol;
-
-+ (NSDictionary<NSString *, id> *)modelPropertyKeyMapper;
-
-
-@end
-
-#define implementation(_protocol_) _protocol_; \
-_Pragma("clang diagnostic push") \
-_Pragma("clang diagnostic ignored \"-Wobjc-protocol-property-synthesis\"") \
-@interface __YFProtocol_ ## _protocol_ ## _transformer__ : NSObject <_protocol_, YFProtocolModel> @end\
-@implementation __YFProtocol_ ## _protocol_ ## _transformer__ \
-_Pragma("clang diagnostic pop") \
-
-#define struct(_name_, _body_) YFProtocolModel; \
-        typedef struct _name_ _body_ _name_; \
-        YFProtocolRegisterStruct(_name_)
 
 /**
  定义一个注册 struct 类型
@@ -57,6 +66,7 @@ _Pragma("clang diagnostic pop") \
 #define YFProtocolDefineStruct(_name_, _body_) \
         typedef struct _name_ _body_ _name_; \
         YFProtocolRegisterStruct(_name_)
+
 
 /*
  默认注册了一些常用的结构体
@@ -76,15 +86,15 @@ _Pragma("clang diagnostic pop") \
  */
 #define YFProtocolRegisterStruct(_struct_)                                          \
 @interface NSMutableDictionary (YFProtocol_ ## _struct_ ## _Support)                \
-- (void)yf_protocol_model_set_ ## _struct_:(_struct_)arg forKey:(NSString *)key;    \
-- (_struct_)yf_protocol_model_get_ ## _struct_ ## ForKey:(NSString *)key;           \
+- (void)set ## _struct_:(_struct_)arg forKey:(NSString *)key;                       \
+- (_struct_)get ## _struct_ ## ForKey:(NSString *)key;                              \
 @end                                                                                \
 @implementation NSMutableDictionary (YFProtocol_ ## _struct_ ## _Support)           \
-- (void)yf_protocol_model_set_ ## _struct_:(_struct_)arg forKey:(NSString *)key {   \
+- (void)set ## _struct_:(_struct_)arg forKey:(NSString *)key {                      \
     NSValue *val = [NSValue value:&arg withObjCType:@encode(_struct_)];             \
     [self setValue:val forKey:key];                                                 \
 }                                                                                   \
-- (_struct_)yf_protocol_model_get_ ## _struct_ ## ForKey:(NSString *)key {          \
+- (_struct_)get ## _struct_ ## ForKey:(NSString *)key {                             \
     NSValue *val = [self valueForKey:key];                                          \
     _struct_ ret;                                                                   \
     [val getValue:&ret];                                                            \

@@ -21,14 +21,14 @@
 @property (setter=setNickName:, getter=nickName) NSString *nic_name;
 @end
 
-@protocol CustomPropertyKeyMapper
+@protocol Feed
 @property NSString *uuid;
 @end
 
-@protocol implementation(CustomPropertyKeyMapper)
+@protocol implementation(Feed)
 + (NSDictionary<NSString *,id> *)modelPropertyKeyMapper {
     return @{
-             @"uuid": @"id",
+             @"uuid": @[@"data.ID", @"data._id", @"data.id"],
              };
 }
 @end
@@ -48,8 +48,8 @@
 }
 
 - (void)testCustomPropertyKeyMapper {
-    NSDictionary *dict = @{@"id": @"1234"};
-    id<CustomPropertyKeyMapper> test = YFProtocolModelCreate(@protocol(CustomPropertyKeyMapper), dict);
+    NSDictionary *dict = @{@"data": @{@"id": @"1234"}};
+    id<Feed> test = YFProtocolModelCreate(@protocol(Feed), dict);
     NSLog(@"%@ %@", test, test.uuid);
     test.uuid = @"0000";
     NSLog(@"%@ %@", test, test.uuid);
