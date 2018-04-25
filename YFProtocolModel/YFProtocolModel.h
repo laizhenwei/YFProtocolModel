@@ -22,7 +22,7 @@ FOUNDATION_EXPORT const unsigned char YFProtocolModelVersionString[];
 // Transformer
 + (NSDictionary<NSString *, id> *)modelPropertyKeyMapper;
 
-+ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericClass;
++ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericProtocol;
 
 // KVO Supports
 - (void)addObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath options:(NSKeyValueObservingOptions)options context:(nullable void *)context;

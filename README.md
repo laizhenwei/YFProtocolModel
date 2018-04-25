@@ -149,7 +149,7 @@ YFProtocolDefineStruct(MyStruct, {
 一般的 JSON to Model 都实现了这个功能，但是他们都是基于 Class 实现的，基于 Class 可以很方便实现对应转换方法来进行数据处理，但是我们是 Protocol Model，那得需要点技巧了。。
 
 ```objc
-@protocol Feed
+@protocol Feed <YFProtocolModel>
 @property NSString *uuid;
 @end
 
@@ -169,17 +169,17 @@ YFProtocolDefineStruct(MyStruct, {
 支持 Protocol 容器嵌套
 
 ```objc
-@protocol Comment
+@protocol Comment <YFProtocolModel>
 @property NSString *uuid;
 @end
 
-@protocol Post
+@protocol Post <YFProtocolModel>
 @property NSString *uuid;
 @property NSArray<Comment> *comments;
 @end
 
 @protocol implementation(Post)
-+ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericClass {
++ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericProtocol {
     return @{
              @"comments": @protocol(Comment)
              };
@@ -187,7 +187,7 @@ YFProtocolDefineStruct(MyStruct, {
 @end
 
 - (void)testContainerGenerics {
-    NSDictionary *json = @{@"uuid": @"wonderful",
+    NSDictionary *json = @{@"uuid": @"12345678",
                            @"comments": @[
                                    @{@"uuid": @"1"},
                                    @{@"uuid": @"2"},
@@ -196,6 +196,7 @@ YFProtocolDefineStruct(MyStruct, {
                                     ]
                            };
     id<Post> test = YFProtocolModelCreate(@protocol(Post), json);
+    NSLog(@"%@", [test.comments[3] uuid]);
 }
 ```
 

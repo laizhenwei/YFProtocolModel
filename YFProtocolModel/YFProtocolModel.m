@@ -99,8 +99,8 @@ YFProtocolRegisterStruct(CGAffineTransform)
     }
     
     NSDictionary *containerMapperDict;
-    if ([transformer respondsToSelector:@selector(modelContainerPropertyGenericClass)]) {
-        containerMapperDict = [transformer modelContainerPropertyGenericClass];
+    if ([transformer respondsToSelector:@selector(modelContainerPropertyGenericProtocol)]) {
+        containerMapperDict = [transformer modelContainerPropertyGenericProtocol];
     }
     
     [self.protocolInfo.properties enumerateObjectsUsingBlock:^(YFPropertyInfo *obj, NSUInteger idx, BOOL *stop) {

@@ -13,17 +13,17 @@
 
 @end
 
-@protocol Comment
+@protocol Comment <YFProtocolModel>
 @property NSString *uuid;
 @end
 
-@protocol Post
+@protocol Post <YFProtocolModel>
 @property NSString *uuid;
 @property NSArray<Comment> *comments;
 @end
 
 @protocol implementation(Post)
-+ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericClass {
++ (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericProtocol {
     return @{
              @"comments": @protocol(Comment)
              };
@@ -33,7 +33,7 @@
 @implementation YFProtocolContainerGenericTests
 
 - (void)testContainerGenerics {
-    NSDictionary *json = @{@"uuid": @"wonderful",
+    NSDictionary *json = @{@"uuid": @"12345678",
                            @"comments": @[
                                    @{@"uuid": @"1"},
                                    @{@"uuid": @"2"},

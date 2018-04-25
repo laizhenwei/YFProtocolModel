@@ -17,8 +17,10 @@ typedef struct ClassNumber {
     NSInteger grade, number;
 } ClassNumber;
 
+// - 手动注册
 YFProtocolRegisterStruct(ClassNumber)
 
+// - 自动注册
 YFProtocolDefineStruct(MyStruct, {
     BOOL flag;
     NSInteger num;
