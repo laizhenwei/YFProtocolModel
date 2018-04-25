@@ -22,7 +22,7 @@ Model = Protocol + Dictionary
 同时，你可以理解为这是为 `Dictionary` 增加一个优雅的访问方式。
 
 ```objc
-@protocol Human
+@protocol Human <YFProtocolModel>
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, assign) NSInteger age;
 @end
@@ -36,17 +36,18 @@ human.age = 14;
 
 > 目前 `Protocol Model` 只是个雏，需要轻点儿折腾~
 
-- [x] NSObject 类型
+- [x] 属性支持 NS 类型
 - [x] 值类型（int, float, BOOL 等）
 - [x] 常用结构体（CGRect，CGPoint 等）
 - [x] 自定义结构体
 - [x] 自定义 `setter` 和 `getter`
 - [x] JSON 转 Protocol Model
-- [ ] ~~@optional 属性 (当前 `objc` 不支持读取 `@optional` 属性列表)~~
 - [x] 协议继承
 - [x] key 和属性名映射
 - [x] Model 嵌套
 - [x] 容器类属性
+- [x] KVO 支持
+- [ ] ~~@optional 属性 (当前 `objc` 不支持读取 `@optional` 属性列表)~~
 - [ ] 类型转换
 - [ ] Property Attribute 特性 (copy、weak等)
 - [ ] ······
@@ -132,7 +133,7 @@ typedef struct MyStruct {
 YFProtocolRegisterStruct(MyStruct)
 ```
 
-如果不想定义的问题，可以使用内置提供的方法，定义后自动注册
+可以使用内置提供的方法，自动注册
 
 ```objc
 YFProtocolDefineStruct(MyStruct, {
@@ -196,5 +197,29 @@ YFProtocolDefineStruct(MyStruct, {
                            };
     id<Post> test = YFProtocolModelCreate(@protocol(Post), json);
 }
+```
+
+##### KVO 支持
+
+因为 KVO 是一个非正式协议，因此 `Protocol Model` 使用 KVO 需要手动加入对应 KVO 方法，目前方法已经在基础协议 `YFProtocolModel` 中定义，自定义 Model 只需要继承该协议便可。
+
+```
+@protocol KVOModelTests <YFProtocolModel>
+@property NSString *name;
+@end
+
+- (void)testKVOProtocolModel {
+    id<KVOModelTests> test = YFProtocolModelCreate(@protocol(KVOModelTests));
+    [test addObserver:self forKeyPath:@"name" options:NSKeyValueObservingOptionNew context:nil];
+    test.name = @"1";
+    test.name = @"2";
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    NSLog(@"%@", change[NSKeyValueChangeNewKey]);
+}
+------
+1
+2
 ```
 

@@ -12,17 +12,24 @@ FOUNDATION_EXPORT double YFProtocolModelVersionNumber;
 FOUNDATION_EXPORT const unsigned char YFProtocolModelVersionString[];
 
 /**
- Base Protocol
+  基础 Protocol，提供映射、KVO 等接口
  */
 @protocol YFProtocolModel <NSObject>
 @optional
 
 @property (nonatomic, strong, readonly) Protocol *protocol;
 
+// Transformer
 + (NSDictionary<NSString *, id> *)modelPropertyKeyMapper;
 
 + (NSDictionary<NSString *, Protocol *> *)modelContainerPropertyGenericClass;
 
+// KVO Supports
+- (void)addObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath options:(NSKeyValueObservingOptions)options context:(nullable void *)context;
+
+- (void)removeObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath context:(nullable void *)context;
+
+- (void)removeObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath;
 @end
 
 /**
